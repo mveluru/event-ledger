@@ -1,0 +1,19 @@
+
+version: '3.8'
+services:
+  gateway:
+    build: ../../gateway-service
+    ports: ["8080:8080"]
+
+  account:
+    build: ../../account-service
+    ports: ["8081:8081"]
+
+  kafka:
+    image: bitnami/kafka
+
+  redis:
+    image: redis
+
+  postgres:
+    image: postgres:15

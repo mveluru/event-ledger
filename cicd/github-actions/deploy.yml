@@ -1,0 +1,54 @@
+name: Event Ledger CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'release/*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn clean install -Dnet.bytebuddy.experimental=true
+
+  deploy-qa:
+    name: Deploy to QA
+    needs: build-and-test
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: QA
+    steps:
+      - name: Deploy to QA Environment
+        run: echo "Deploying to QA K8s Cluster (1 replica)..."
+
+  deploy-uat:
+    name: Deploy to UAT (Prod Candidate)
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: UAT
+    steps:
+      - name: Deploy to UAT Environment
+        run: echo "Deploying to UAT (Prod Candidate) K8s Cluster..."
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Deploy to Production Environment
+        run: |
+          echo "Deploying to Production K8s Cluster (3 replicas, high availability)..."
+          echo "Triggering rolling update..."
